@@ -9,6 +9,8 @@ import PantallaPresupuesto from '@/pantallas/PantallaPresupuesto';
 import PantallaGastos from '@/pantallas/PantallaGastos';
 import PantallaResumen from '@/pantallas/PantallaResumen';
 import PantallaRegistrarGasto from '@/pantallas/PantallaRegistrarGasto';
+import PantallaAjustes from '@/pantallas/PantallaAjustes';
+import { coloresTema, usarTema } from '@/almacen/usarTema';
 
 const Tab = createBottomTabNavigator();
 
@@ -21,6 +23,13 @@ function BotonFlotanteRegistrar({ onPress }: { onPress: () => void }) {
 }
 
 export default function NavegacionPrincipal() {
+  const modo = usarTema((estado) => estado.modo);
+  const idioma = usarTema((estado) => estado.idioma);
+  const colores = coloresTema[modo];
+  const textos = idioma === 'es'
+    ? { inicio: 'Inicio', presupuesto: 'Presupuesto', gastos: 'Gastos', resumen: 'Resumen', ajustes: 'Ajustes' }
+    : { inicio: 'Home', presupuesto: 'Budget', gastos: 'Expenses', resumen: 'Summary', ajustes: 'Settings' };
+
   return (
     <NavigationContainer>
       <Tab.Navigator
@@ -28,10 +37,10 @@ export default function NavegacionPrincipal() {
           headerShown: false,
           tabBarShowLabel: true,
           tabBarActiveTintColor: '#E0B84B',
-          tabBarInactiveTintColor: '#7A7A7A',
+          tabBarInactiveTintColor: colores.textoSecundario,
           tabBarStyle: {
-            backgroundColor: '#101010',
-            borderTopColor: '#2A2A2A',
+            backgroundColor: colores.fondo,
+            borderTopColor: colores.borde,
             borderTopWidth: 0.5,
           },
         }}
@@ -39,16 +48,16 @@ export default function NavegacionPrincipal() {
         <Tab.Screen
           name="Inicio"
           component={PantallaInicio}
-          options={{
-            tabBarIcon: ({ color, size }) => (
-              <MaterialCommunityIcons name="home" color={color} size={size} />
-            ),
-          }}
+          options={{ tabBarLabel: textos.inicio,
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="home" color={color} size={size} />
+          ),
+        }}
         />
         <Tab.Screen
           name="Presupuesto"
           component={PantallaPresupuesto}
-          options={{
+          options={{ tabBarLabel: textos.presupuesto,
             tabBarIcon: ({ color, size }) => (
               <MaterialCommunityIcons name="wallet" color={color} size={size} />
             ),
@@ -66,7 +75,7 @@ export default function NavegacionPrincipal() {
         <Tab.Screen
           name="Gastos"
           component={PantallaGastos}
-          options={{
+          options={{ tabBarLabel: textos.gastos,
             tabBarIcon: ({ color, size }) => (
               <MaterialCommunityIcons name="format-list-bulleted" color={color} size={size} />
             ),
@@ -75,9 +84,20 @@ export default function NavegacionPrincipal() {
         <Tab.Screen
           name="Resumen"
           component={PantallaResumen}
-          options={{
+          options={{ tabBarLabel: textos.resumen,
             tabBarIcon: ({ color, size }) => (
               <MaterialCommunityIcons name="chart-line" color={color} size={size} />
+            ),
+          }}
+        />
+        <Tab.Screen
+          name="Ajustes"
+          component={PantallaAjustes}
+          options={{
+            tabBarButton: () => null,
+            tabBarLabel: textos.ajustes,
+            tabBarIcon: ({ color, size }) => (
+              <MaterialCommunityIcons name="cog-outline" color={color} size={size} />
             ),
           }}
         />

@@ -1,10 +1,14 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { usarAlmacenGastos } from '@/almacen/usarAlmacenGastos';
-import { obtenerPresupuesto } from '@/bd/consultas';
+import { obtenerPresupuestosRemotos } from '@/bd/presupuestosRemotos';
+import { coloresTema, usarTema } from '@/almacen/usarTema';
+import { traducir } from '@/utilidades/traducciones';
+import { usarSesion } from '@/almacen/usarSesion';
+import { EstadoRemoto } from '@/componentes/EstadoRemoto';
 import {
   formatearGuaranies,
   convertirISOaFechaLocal,
@@ -33,23 +37,44 @@ function obtenerInicioDeSemana(fecha: Date): Date {
   return inicio;
 }
 
-export default function PantallaInicio() {
-  const { categorias, gastosDelMes, cargarCategorias, cargarGastosDelMes } = usarAlmacenGastos();
-  const [fechaSeleccionada, setFechaSeleccionada] = useState(obtenerFechaHoyISO());
+export default function PantallaInicio({ navigation }: any) {
+  const {
+    categorias,
+    gastosDelMes,
+    fechaSeleccionada,
+    cargarCategorias,
+    cargarGastosDelMes,
+    setFechaSeleccionada,
+    cargando,
+    error,
+  } = usarAlmacenGastos();
+  const modo = usarTema((estado) => estado.modo);
+  const idioma = usarTema((estado) => estado.idioma);
+  const usuario = usarSesion((estado) => estado.usuario);
+  const colores = coloresTema[modo];
+  const t = (clave: Parameters<typeof traducir>[1]) => traducir(idioma, clave);
+  const nombreUsuario = usuario?.user_metadata?.nombre || usuario?.email?.split('@')[0] || 'Matias';
   const [periodoCategorias, setPeriodoCategorias] = useState<'dia' | 'semana' | 'mes'>('dia');
   const [presupuestoMensual, setPresupuestoMensual] = useState(2000000);
   const [presupuestoSemanal, setPresupuestoSemanal] = useState(500000);
   const [presupuestoDiario, setPresupuestoDiario] = useState(100000);
+  const [presupuestosMensuales, setPresupuestosMensuales] = useState<Awaited<ReturnType<typeof obtenerPresupuestosRemotos>>>([]);
 
   useEffect(() => {
     cargarCategorias();
   }, []);
 
-  const recargarPresupuestos = useCallback(() => {
+  const recargarPresupuestos = useCallback(async () => {
     const fecha = convertirISOaFechaLocal(fechaSeleccionada);
-    const presupuestoMes = obtenerPresupuesto(obtenerMesDeFechaISO(fechaSeleccionada)).find((p) => p.categoriaId === null && p.periodo === 'mensual');
-    const presupuestoSemana = obtenerPresupuesto(obtenerSemanaISO(fecha)).find((p) => p.categoriaId === null && p.periodo === 'semanal');
-    const presupuestoDia = obtenerPresupuesto(fechaSeleccionada).find((p) => p.categoriaId === null && p.periodo === 'diario');
+    const [presupuestosMes, presupuestosSemana, presupuestosDia] = await Promise.all([
+      obtenerPresupuestosRemotos(obtenerMesDeFechaISO(fechaSeleccionada)),
+      obtenerPresupuestosRemotos(obtenerSemanaISO(fecha)),
+      obtenerPresupuestosRemotos(fechaSeleccionada),
+    ]);
+    const presupuestoMes = presupuestosMes.find((p) => p.categoriaId === null && p.periodo === 'mensual');
+    const presupuestoSemana = presupuestosSemana.find((p) => p.categoriaId === null && p.periodo === 'semanal');
+    const presupuestoDia = presupuestosDia.find((p) => p.categoriaId === null && p.periodo === 'diario');
+    setPresupuestosMensuales(presupuestosMes);
     setPresupuestoMensual(presupuestoMes?.montoLimite ?? 2000000);
     setPresupuestoSemanal(presupuestoSemana?.montoLimite ?? 500000);
     setPresupuestoDiario(presupuestoDia?.montoLimite ?? 100000);
@@ -72,13 +97,12 @@ export default function PantallaInicio() {
   const fechaElegida = convertirISOaFechaLocal(fechaSeleccionada);
   const hoyNormalizado = normalizarFecha(fechaElegida).getTime();
   const inicioSemanaNormalizado = obtenerInicioDeSemana(fechaElegida).getTime();
-  const diasCarrusel = Array.from({ length: 7 }, (_, indice) => {
+  const indiceDiaActual = 3650;
+  const diasCarrusel = Array.from({ length: indiceDiaActual * 2 + 1 }, (_, indice) => {
     const fecha = new Date();
-    fecha.setDate(fecha.getDate() + indice - 3);
+    fecha.setDate(fecha.getDate() + indice - indiceDiaActual);
     return fecha;
   });
-  const presupuestosMensuales = obtenerPresupuesto(obtenerMesDeFechaISO(fechaSeleccionada));
-
   function gastoCoincideConPeriodo(fechaGasto: string): boolean {
     const fechaNormalizada = normalizarFecha(fechaGasto).getTime();
     if (periodoCategorias === 'dia') return fechaNormalizada === hoyNormalizado;
@@ -117,47 +141,60 @@ export default function PantallaInicio() {
   const pctHoyBarra = Math.min(100, Math.round((totalHoy / presupuestoDiario) * 100));
 
   return (
-    <SafeAreaView style={estilos.contenedor} edges={['top']}>
+    <SafeAreaView style={[estilos.contenedor, { backgroundColor: colores.fondo }]} edges={['top']}>
       <ScrollView contentContainerStyle={estilos.contenido} showsVerticalScrollIndicator={false}>
-        <Text style={estilos.saludo}>Hola, Matias</Text>
+        <View style={estilos.encabezadoInicio}>
+          <Text style={[estilos.saludo, { color: colores.texto }]}>{idioma === 'es' ? `Hola, ${nombreUsuario}` : `Hello, ${nombreUsuario}`}</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Ajustes')} accessibilityLabel={t('ajustes')}>
+            <MaterialCommunityIcons name="cog-outline" size={23} color={colores.texto} />
+          </TouchableOpacity>
+        </View>
+        <EstadoRemoto cargando={cargando} error={error} />
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={estilos.carruselDias}>
-          {diasCarrusel.map((dia) => {
+        <FlatList
+          horizontal
+          data={diasCarrusel}
+          initialScrollIndex={indiceDiaActual}
+          getItemLayout={(_, indice) => ({ length: 60, offset: 60 * indice, index: indice })}
+          keyExtractor={(dia) => obtenerFechaISO(dia)}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={estilos.carruselDias}
+          renderItem={({ item: dia }) => {
             const iso = obtenerFechaISO(dia);
             const seleccionado = iso === fechaSeleccionada;
             return (
               <TouchableOpacity
                 key={iso}
-                style={[estilos.diaItem, seleccionado && estilos.diaItemActivo]}
+                style={[estilos.diaItem, { backgroundColor: colores.superficie }, seleccionado && estilos.diaItemActivo]}
                 onPress={() => setFechaSeleccionada(iso)}
               >
-                <Text style={[estilos.diaSemana, seleccionado && estilos.textoDiaActivo]}>
+                <Text style={[estilos.diaSemana, { color: colores.textoSecundario }, seleccionado && estilos.textoDiaActivo]}>
                   {dia.toLocaleDateString('es-PY', { weekday: 'short' }).replace('.', '')}
                 </Text>
-                <Text style={[estilos.numeroDia, seleccionado && estilos.textoDiaActivo]}>
+                <Text style={[estilos.numeroDia, { color: colores.texto }, seleccionado && estilos.textoDiaActivo]}>
                   {dia.getDate()}
                 </Text>
                 {iso === obtenerFechaHoyISO() && <View style={estilos.puntoHoy} />}
               </TouchableOpacity>
             );
-          })}
-        </ScrollView>
+          }}
+        />
 
-        <Text style={estilos.fechaSeleccionada}>
-          Gastos del {fechaElegida.toLocaleDateString('es-PY', { day: 'numeric', month: 'long' })}
+        <Text style={[estilos.fechaSeleccionada, { color: colores.textoSecundario }]}> 
+          {t('gastos')} del {fechaElegida.toLocaleDateString(idioma === 'es' ? 'es-PY' : 'en-US', { day: 'numeric', month: 'long' })}
         </Text>
 
         {/* 1. Tarjeta Resumen Mes */}
-        <View style={estilos.tarjetaResumen}>
-          <Text style={estilos.etiqueta}>Gastado este mes</Text>
-          <Text style={estilos.montoGrande}>{formatearGuaranies(totalGastadoMes)}</Text>
+              <View style={[estilos.tarjetaResumen, { backgroundColor: colores.superficie }]}>
+          <Text style={[estilos.etiqueta, { color: colores.textoSecundario }]}>{t('gastadoEsteMes')}</Text>
+          <Text style={[estilos.montoGrande, { color: colores.texto }]}>{formatearGuaranies(totalGastadoMes)}</Text>
           
           <View style={estilos.barraFondo}>
             <View style={[estilos.barraProgreso, { width: `${pctMesBarra}%` }]} />
           </View>
           
           <View style={estilos.filaPresupuesto}>
-            <Text style={estilos.etiquetaChica}>
+            <Text style={[estilos.etiquetaChica, { color: colores.textoSecundario }]}>
               de {formatearGuaranies(presupuestoMensual)} presupuestados
             </Text>
             <Text style={estilos.porcentajeTexto}>{pctMesCalculado}%</Text>
@@ -167,45 +204,45 @@ export default function PantallaInicio() {
         {/* 2. Grilla Hoy vs Esta Semana con Barras de Progreso */}
         <View style={estilos.grillaMétricas}>
           {/* Tarjeta Hoy */}
-          <View style={estilos.tarjetaGrilla}>
-            <Text style={estilos.etiqueta}>Gastado ese día</Text>
-            <Text style={estilos.montoMediano}>{formatearGuaranies(totalHoy)}</Text>
+          <View style={[estilos.tarjetaGrilla, { backgroundColor: colores.superficie }]}>
+            <Text style={[estilos.etiqueta, { color: colores.textoSecundario }]}>{t('gastadoEseDia')}</Text>
+            <Text style={[estilos.montoMediano, { color: colores.texto }]}>{formatearGuaranies(totalHoy)}</Text>
             
             {/* Barra que se mueve dinámicamente según lo gastado hoy */}
             <View style={estilos.barraFondoChica}>
               <View style={[estilos.barraProgreso, { width: `${pctHoyBarra}%` }]} />
             </View>
-            <Text style={estilos.limiteMetrica}>
+            <Text style={[estilos.limiteMetrica, { color: colores.textoSecundario }]}>
               de {formatearGuaranies(presupuestoDiario)} presupuestados ({pctHoyCalculado}%)
             </Text>
           </View>
 
           {/* Tarjeta Semana */}
-          <View style={estilos.tarjetaGrilla}>
-            <Text style={estilos.etiqueta}>Gastado esta semana</Text>
-            <Text style={estilos.montoMediano}>{formatearGuaranies(totalSemana)}</Text>
+          <View style={[estilos.tarjetaGrilla, { backgroundColor: colores.superficie }]}>
+            <Text style={[estilos.etiqueta, { color: colores.textoSecundario }]}>{t('gastadoEstaSemana')}</Text>
+            <Text style={[estilos.montoMediano, { color: colores.texto }]}>{formatearGuaranies(totalSemana)}</Text>
             
             {/* Barra que se mueve dinámicamente según lo gastado esta semana */}
             <View style={estilos.barraFondoChica}>
               <View style={[estilos.barraProgreso, { width: `${pctSemanaBarra}%` }]} />
             </View>
-            <Text style={estilos.limiteMetrica}>
+            <Text style={[estilos.limiteMetrica, { color: colores.textoSecundario }]}>
               de {formatearGuaranies(presupuestoSemanal)} presupuestados ({pctSemanaCalculado}%)
             </Text>
           </View>
         </View>
 
         {/* Categorías */}
-        <Text style={estilos.subtitulo}>Por categoría</Text>
-        <View style={estilos.selectorPeriodoCategorias}>
+        <Text style={[estilos.subtitulo, { color: colores.texto }]}>{t('porCategoria')}</Text>
+        <View style={[estilos.selectorPeriodoCategorias, { backgroundColor: colores.superficie }]}>
           {(['dia', 'semana', 'mes'] as const).map((periodo) => (
             <TouchableOpacity
               key={periodo}
               style={[estilos.opcionPeriodo, periodoCategorias === periodo && estilos.opcionPeriodoActiva]}
               onPress={() => setPeriodoCategorias(periodo)}
             >
-              <Text style={[estilos.textoPeriodo, periodoCategorias === periodo && estilos.textoPeriodoActivo]}>
-                {periodo === 'dia' ? 'Día' : periodo === 'semana' ? 'Semana' : 'Mes'}
+              <Text style={[estilos.textoPeriodo, { color: colores.textoSecundario }, periodoCategorias === periodo && estilos.textoPeriodoActivo]}>
+                {periodo === 'dia' ? t('dia') : periodo === 'semana' ? t('semana') : t('mes')}
               </Text>
             </TouchableOpacity>
           ))}
@@ -222,7 +259,7 @@ export default function PantallaInicio() {
             if (totalCategoria === 0) return null;
 
             return (
-              <View key={categoria.id} style={estilos.filaCategoria}>
+              <View key={categoria.id} style={[estilos.filaCategoria, { backgroundColor: colores.superficie }]}>
                 <View style={estilos.iconoContenedor}>
                   <MaterialCommunityIcons 
                     name={(categoria.icono as any) || 'silverware-fork-knife'} 
@@ -230,7 +267,7 @@ export default function PantallaInicio() {
                     color={categoria.color}
                   />
                 </View>
-                <Text style={estilos.nombreCategoria}>{categoria.nombre}</Text>
+                <Text style={[estilos.nombreCategoria, { color: colores.texto }]}>{categoria.nombre}</Text>
                 <Text style={estilos.montoCategoria}>{formatearGuaranies(totalCategoria)}</Text>
                 <View style={estilos.barraCategoriaFondo}>
                   <View
@@ -249,9 +286,9 @@ export default function PantallaInicio() {
         </View>
 
         {/* Últimos gastos */}
-        <Text style={estilos.subtitulo}>Últimos gastos</Text>
+        <Text style={[estilos.subtitulo, { color: colores.texto }]}>{t('ultimosGastos')}</Text>
         <View style={estilos.tarjetaGastos}>
-          <Text style={estilos.etiquetaSeccion}>Ese día</Text>
+          <Text style={estilos.etiquetaSeccion}>{t('eseDia')}</Text>
           {gastosDelMes.filter((gasto) => normalizarFecha(gasto.fecha).getTime() === hoyNormalizado).slice(0, 5).map((gasto, index) => {
             const hora = new Date(gasto.fecha).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             return (
@@ -282,6 +319,7 @@ export default function PantallaInicio() {
 const estilos = StyleSheet.create({
   contenedor: { flex: 1, backgroundColor: '#0D0D0D' },
   contenido: { padding: 16, paddingBottom: 32 },
+  encabezadoInicio: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   saludo: { fontSize: 24, fontWeight: '700', color: '#FFFFFF', marginBottom: 20, marginTop: 8 },
   carruselDias: { gap: 8, paddingBottom: 12 },
   diaItem: {

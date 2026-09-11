@@ -16,18 +16,24 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { usarAlmacenGastos } from '@/almacen/usarAlmacenGastos';
-import { crearCategoria, guardarPresupuestoPorCategoria, obtenerPresupuesto } from '@/bd/consultas';
+import { coloresTema, usarTema } from '@/almacen/usarTema';
+import { traducir } from '@/utilidades/traducciones';
+import { guardarPresupuestoRemoto, obtenerPresupuestosRemotos } from '@/bd/presupuestosRemotos';
 import {
   formatearGuaranies,
-  obtenerFechaHoyISO,
-  obtenerMesActualISO,
-  obtenerSemanaActualISO,
+  convertirISOaFechaLocal,
+  obtenerMesDeFechaISO,
+  obtenerSemanaISO,
 } from '@/utilidades/formato';
 
 const COLORES_CATEGORIA = ['#E0B84B', '#5DA9E9', '#C084FC', '#5CC8A1', '#E57A6D', '#F59E7A'];
 
 export default function PantallaPresupuesto() {
-  const { categorias, gastosDelMes, cargarCategorias, cargarGastosDelMes, borrarCategoria } = usarAlmacenGastos();
+  const { categorias, gastosDelMes, fechaSeleccionada, cargarCategorias, cargarGastosDelMes, crearCategoria, borrarCategoria } = usarAlmacenGastos();
+  const modo = usarTema((estado) => estado.modo);
+  const idioma = usarTema((estado) => estado.idioma);
+  const colores = coloresTema[modo];
+  const t = (clave: Parameters<typeof traducir>[1]) => traducir(idioma, clave);
   const [periodo, setPeriodo] = useState<'mensual' | 'semanal' | 'diario'>('mensual');
   const [modalVisible, setModalVisible] = useState(false);
   const [nombreCategoria, setNombreCategoria] = useState('');
@@ -38,12 +44,12 @@ export default function PantallaPresupuesto() {
   useEffect(() => {
     cargarCategorias();
     cargarGastosDelMes();
-    cargarMontosGuardados();
+    void cargarMontosGuardados();
   }, [periodo]);
 
-  function cargarMontosGuardados() {
+  async function cargarMontosGuardados() {
     const mesOSemana = obtenerClavePeriodo();
-    const presupuestos = obtenerPresupuesto(mesOSemana);
+    const presupuestos = await obtenerPresupuestosRemotos(mesOSemana);
     const mapa: Record<number, string> = {};
     presupuestos.forEach((p) => {
       if (p.categoriaId !== null) mapa[p.categoriaId] = String(p.montoLimite);
@@ -53,9 +59,9 @@ export default function PantallaPresupuesto() {
   }
 
   function obtenerClavePeriodo() {
-    if (periodo === 'mensual') return obtenerMesActualISO();
-    if (periodo === 'semanal') return obtenerSemanaActualISO();
-    return obtenerFechaHoyISO();
+    if (periodo === 'mensual') return obtenerMesDeFechaISO(fechaSeleccionada);
+    if (periodo === 'semanal') return obtenerSemanaISO(convertirISOaFechaLocal(fechaSeleccionada));
+    return fechaSeleccionada;
   }
 
   function crearNuevaCategoria() {
@@ -68,15 +74,15 @@ export default function PantallaPresupuesto() {
     cargarCategorias();
   }
 
-  function guardarTodoElPresupuesto() {
+  async function guardarTodoElPresupuesto() {
     Keyboard.dismiss();
     const mesOSemana = obtenerClavePeriodo();
-    guardarPresupuestoPorCategoria(null, Number(montoGeneral || 0), periodo, mesOSemana);
-    categorias.forEach((categoria) => {
+    await guardarPresupuestoRemoto(null, Number(montoGeneral || 0), periodo, mesOSemana);
+    await Promise.all(categorias.map((categoria) => {
       const monto = Number(montosPorCategoria[categoria.id] ?? 0);
-      guardarPresupuestoPorCategoria(categoria.id, monto, periodo, mesOSemana);
-    });
-    Alert.alert('Listo', 'Presupuesto guardado');
+      return guardarPresupuestoRemoto(categoria.id, monto, periodo, mesOSemana);
+    }));
+    Alert.alert(t('listo'), t('presupuestoGuardado'));
   }
 
   function confirmarBorradoCategoria(id: number, nombre: string) {
@@ -91,38 +97,39 @@ export default function PantallaPresupuesto() {
   }
 
   return (
-    <SafeAreaView style={estilos.contenedor} edges={['top']}>
+    <SafeAreaView style={[estilos.contenedor, { backgroundColor: colores.fondo }]} edges={['top']}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <KeyboardAvoidingView
           style={estilos.teclado}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
           <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-            <Text style={estilos.titulo}>Presupuesto</Text>
+            <Text style={[estilos.titulo, { color: colores.texto }]}>{t('presupuesto')}</Text>
+            <Text style={[estilos.fechaPresupuesto, { color: colores.textoSecundario }]}>{t('configurandoPara')} {convertirISOaFechaLocal(fechaSeleccionada).toLocaleDateString(idioma === 'es' ? 'es-PY' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' })}</Text>
 
       <View style={estilos.filaTabs}>
         <TouchableOpacity
-          style={[estilos.tab, periodo === 'mensual' && estilos.tabActivo]}
+          style={[estilos.tab, { backgroundColor: colores.superficie }, periodo === 'mensual' && estilos.tabActivo]}
           onPress={() => setPeriodo('mensual')}
         >
-          <Text style={estilos.textoTab}>Mensual</Text>
+          <Text style={[estilos.textoTab, { color: colores.texto }]}>{t('mensual')}</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[estilos.tab, periodo === 'semanal' && estilos.tabActivo]}
+          style={[estilos.tab, { backgroundColor: colores.superficie }, periodo === 'semanal' && estilos.tabActivo]}
           onPress={() => setPeriodo('semanal')}
         >
-          <Text style={estilos.textoTab}>Semanal</Text>
+          <Text style={[estilos.textoTab, { color: colores.texto }]}>{t('semanal')}</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[estilos.tab, periodo === 'diario' && estilos.tabActivo]}
+          style={[estilos.tab, { backgroundColor: colores.superficie }, periodo === 'diario' && estilos.tabActivo]}
           onPress={() => setPeriodo('diario')}
         >
-          <Text style={estilos.textoTab}>Diario</Text>
+          <Text style={[estilos.textoTab, { color: colores.texto }]}>{t('diario')}</Text>
         </TouchableOpacity>
       </View>
 
-      <View style={estilos.filaPresupuestoGeneral}>
-        <Text style={estilos.etiquetaGeneral}>Presupuesto general {periodo}</Text>
+      <View style={[estilos.filaPresupuestoGeneral, { backgroundColor: colores.superficie }]}>
+        <Text style={[estilos.etiquetaGeneral, { color: colores.texto }]}>{t('presupuestoGeneral')} {periodo === 'mensual' ? t('mensual').toLowerCase() : periodo === 'semanal' ? t('semanal').toLowerCase() : t('diario').toLowerCase()}</Text>
         <View style={estilos.filaMontoEditable}>
           <Text style={estilos.simboloGuarani}>₲</Text>
           <TextInput
@@ -141,13 +148,13 @@ export default function PantallaPresupuesto() {
           <View style={estilos.filaCategoria}>
             <View style={estilos.filaEtiqueta}>
               <MaterialCommunityIcons name={categoria.icono as any} size={14} color={categoria.color} />
-              <Text style={estilos.nombreCategoria}>{categoria.nombre}</Text>
+                <Text style={[estilos.nombreCategoria, { color: colores.texto }]}>{categoria.nombre}</Text>
             </View>
             <View style={estilos.filaAccionesCategoria}>
               <View style={estilos.filaMontoEditable}>
-                <Text style={estilos.simboloGuarani}>₲</Text>
+                <Text style={[estilos.simboloGuarani, { color: colores.textoSecundario }]}>₲</Text>
                 <TextInput
-                  style={estilos.inputMontoCategoria}
+                  style={[estilos.inputMontoCategoria, { color: colores.textoCampo }]}
                   placeholder="0"
                   placeholderTextColor="#7A7A7A"
                   keyboardType="numeric"
@@ -171,30 +178,30 @@ export default function PantallaPresupuesto() {
       ))}
 
       <TouchableOpacity style={estilos.botonSecundario} onPress={() => setModalVisible(true)}>
-        <Text style={estilos.textoBotonSecundario}>+ Añadir categoría</Text>
+        <Text style={[estilos.textoBotonSecundario, { color: colores.texto }]}>{t('anadirCategoria')}</Text>
       </TouchableOpacity>
 
             <TouchableOpacity style={estilos.botonGuardar} onPress={guardarTodoElPresupuesto}>
-              <Text style={estilos.textoBotonGuardar}>Guardar presupuesto</Text>
+              <Text style={estilos.textoBotonGuardar}>{t('guardarPresupuesto')}</Text>
             </TouchableOpacity>
           </ScrollView>
         </KeyboardAvoidingView>
       </TouchableWithoutFeedback>
 
       <Modal visible={modalVisible} transparent animationType="fade">
-        <View style={estilos.fondoModal}>
-          <View style={estilos.contenidoModal}>
-            <Text style={estilos.tituloModal}>Nueva categoría</Text>
+        <View style={[estilos.fondoModal, { backgroundColor: colores.fondoModal }]}> 
+          <View style={[estilos.contenidoModal, { backgroundColor: colores.modal }]}> 
+            <Text style={[estilos.tituloModal, { color: colores.texto }]}>{t('nuevaCategoria')}</Text>
 
             <TextInput
-              style={estilos.textoInput}
+              style={[estilos.textoInput, { color: colores.textoCampo, borderColor: colores.borde, backgroundColor: colores.campo }]}
               placeholder="Ej. Salud"
               placeholderTextColor="#7A7A7A"
               value={nombreCategoria}
               onChangeText={setNombreCategoria}
             />
             <TextInput
-              style={estilos.textoInput}
+              style={[estilos.textoInput, { color: colores.textoCampo, borderColor: colores.borde, backgroundColor: colores.campo }]}
               placeholder="₲ 0"
               placeholderTextColor="#7A7A7A"
               keyboardType="numeric"
@@ -207,10 +214,10 @@ export default function PantallaPresupuesto() {
                 style={estilos.botonCancelar}
                 onPress={() => setModalVisible(false)}
               >
-                <Text style={estilos.textoBotonSecundario}>Cancelar</Text>
+                <Text style={[estilos.textoBotonSecundario, { color: colores.texto }]}>{t('cancelar')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={estilos.botonCrear} onPress={crearNuevaCategoria}>
-                <Text style={estilos.textoBotonGuardar}>Crear</Text>
+                <Text style={estilos.textoBotonGuardar}>{t('crear')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -224,6 +231,7 @@ const estilos = StyleSheet.create({
   contenedor: { flex: 1, backgroundColor: '#101010', padding: 16 },
   teclado: { flex: 1 },
   titulo: { fontSize: 15, fontWeight: '500', color: '#FFFFFF', marginBottom: 12 },
+  fechaPresupuesto: { fontSize: 12, marginBottom: 12 },
   filaTabs: { flexDirection: 'row', gap: 6, marginBottom: 16 },
   tab: { flex: 1, padding: 8, borderRadius: 8, alignItems: 'center', backgroundColor: '#1A1A1A' },
   tabActivo: { backgroundColor: '#E0B84B' },

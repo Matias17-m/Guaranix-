@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <rect width="1024" height="1024" rx="180" fill="#000000"/>
+  <rect x="150" y="150" width="724" height="724" rx="150" fill="#F8C514"/>
+  <g fill="#101010" font-family="Arial, Helvetica, sans-serif" font-weight="900">
+    <text x="220" y="620" font-size="430">G</text>
+    <path d="M570 430h92v116h116v92H662v116h-92V638H454v-92h116z"/>
+  </g>
+  <path d="M320 666c45 31 104 44 155 17" fill="none" stroke="#B99108" stroke-width="24" opacity=".7"/>
+  <path d="M686 665l78 30v26l-78-30z" fill="#B99108" opacity=".7"/>
+</svg>

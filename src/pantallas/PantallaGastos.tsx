@@ -5,14 +5,23 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { usarAlmacenGastos } from '@/almacen/usarAlmacenGastos';
 import { convertirISOaFechaLocal, formatearGuaranies, obtenerFechaISO } from '@/utilidades/formato';
+import { coloresTema, usarTema } from '@/almacen/usarTema';
+import { traducir } from '@/utilidades/traducciones';
+import { EstadoRemoto } from '@/componentes/EstadoRemoto';
 
 export default function PantallaGastos() {
+  const modo = usarTema((estado) => estado.modo);
+  const idioma = usarTema((estado) => estado.idioma);
+  const colores = coloresTema[modo];
+  const t = (clave: Parameters<typeof traducir>[1]) => traducir(idioma, clave);
   const {
     categorias,
     gastosDelMes,
     cargarCategorias,
     cargarGastosDelMes,
     borrarGasto,
+    cargando,
+    error,
   } = usarAlmacenGastos();
   const [busqueda, setBusqueda] = useState('');
   const [filtrosVisibles, setFiltrosVisibles] = useState(false);
@@ -37,7 +46,7 @@ export default function PantallaGastos() {
   function confirmarEliminacion(id: number, descripcion: string) {
     Alert.alert(
       'Eliminar gasto',
-      `¿Quieres eliminar ${descripcion || 'este gasto'}?`,
+      `¿Quieres eliminar ${descripcion || t('gastos')}?`,
       [
         { text: 'Cancelar', style: 'cancel' },
         { text: 'Eliminar', style: 'destructive', onPress: () => borrarGasto(id) },
@@ -85,13 +94,14 @@ export default function PantallaGastos() {
   }
 
   return (
-    <SafeAreaView style={estilos.contenedor} edges={['top']}>
-      <Text style={estilos.titulo}>Gastos</Text>
+    <SafeAreaView style={[estilos.contenedor, { backgroundColor: colores.fondo }]} edges={['top']}>
+      <Text style={[estilos.titulo, { color: colores.texto }]}>{t('gastos')}</Text>
+      <EstadoRemoto cargando={cargando} error={error} />
 
       <TextInput
-        style={estilos.buscador}
-        placeholder="Buscar gasto..."
-        placeholderTextColor="#7A7A7A"
+        style={[estilos.buscador, { backgroundColor: colores.campo, borderColor: colores.borde, color: colores.textoCampo }]}
+        placeholder={t('buscarGasto')}
+        placeholderTextColor={colores.textoSecundario}
         value={busqueda}
         onChangeText={setBusqueda}
       />
@@ -102,18 +112,18 @@ export default function PantallaGastos() {
         accessibilityLabel="Mostrar filtros"
       >
         <MaterialCommunityIcons name="filter-variant" size={18} color="#E0B84B" />
-        <Text style={estilos.textoBotonFiltros}>Filtros</Text>
+        <Text style={estilos.textoBotonFiltros}>{t('filtros')}</Text>
       </TouchableOpacity>
 
       {filtrosVisibles && (
-        <View style={estilos.panelFiltros}>
-          <Text style={estilos.etiquetaFiltro}>Categoría</Text>
+        <View style={[estilos.panelFiltros, { backgroundColor: colores.superficie }]}> 
+          <Text style={[estilos.etiquetaFiltro, { color: colores.textoSecundario }]}>{t('porCategoria')}</Text>
           <View style={estilos.filaCategorias}>
             <TouchableOpacity
               style={[estilos.chip, categoriaSeleccionada === null && estilos.chipActivo]}
               onPress={() => setCategoriaSeleccionada(null)}
             >
-              <Text style={estilos.textoChip}>Todas</Text>
+              <Text style={[estilos.textoChip, { color: colores.texto }]}>{t('todas')}</Text>
             </TouchableOpacity>
             {categorias.map((categoria) => (
               <TouchableOpacity
@@ -122,37 +132,37 @@ export default function PantallaGastos() {
                 onPress={() => setCategoriaSeleccionada(categoria.id)}
               >
                 <View style={[estilos.puntoCategoria, { backgroundColor: categoria.color }]} />
-                <Text style={estilos.textoChip}>{categoria.nombre}</Text>
+                <Text style={[estilos.textoChip, { color: colores.texto }]}>{categoria.nombre}</Text>
               </TouchableOpacity>
             ))}
           </View>
 
-          <Text style={estilos.etiquetaFiltro}>Rango de fechas</Text>
+          <Text style={[estilos.etiquetaFiltro, { color: colores.textoSecundario }]}>{t('rangoFechas')}</Text>
           <View style={estilos.filaInputs}>
-            <TouchableOpacity style={estilos.selectorFecha} onPress={() => abrirSelectorFecha('desde')}>
+            <TouchableOpacity style={[estilos.selectorFecha, { borderColor: colores.borde }]} onPress={() => abrirSelectorFecha('desde')}>
               <MaterialCommunityIcons name="calendar-start" size={16} color="#E0B84B" />
-              <Text style={estilos.textoSelectorFecha}>{fechaDesde || 'Desde'}</Text>
+              <Text style={[estilos.textoSelectorFecha, { color: colores.texto }]}>{fechaDesde || t('desde')}</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={estilos.selectorFecha} onPress={() => abrirSelectorFecha('hasta')}>
+            <TouchableOpacity style={[estilos.selectorFecha, { borderColor: colores.borde }]} onPress={() => abrirSelectorFecha('hasta')}>
               <MaterialCommunityIcons name="calendar-end" size={16} color="#E0B84B" />
-              <Text style={estilos.textoSelectorFecha}>{fechaHasta || 'Hasta'}</Text>
+              <Text style={[estilos.textoSelectorFecha, { color: colores.texto }]}>{fechaHasta || t('hasta')}</Text>
             </TouchableOpacity>
           </View>
 
-          <Text style={estilos.etiquetaFiltro}>Monto</Text>
+          <Text style={[estilos.etiquetaFiltro, { color: colores.textoSecundario }]}>{t('monto')}</Text>
           <View style={estilos.filaInputs}>
             <TextInput
-              style={estilos.inputFiltro}
-              placeholder="Mínimo"
-              placeholderTextColor="#7A7A7A"
+              style={[estilos.inputFiltro, { borderColor: colores.borde, backgroundColor: colores.campo, color: colores.textoCampo }]}
+              placeholder={t('minimo')}
+              placeholderTextColor={colores.textoSecundario}
               keyboardType="numeric"
               value={montoMinimo}
               onChangeText={setMontoMinimo}
             />
             <TextInput
-              style={estilos.inputFiltro}
-              placeholder="Máximo"
-              placeholderTextColor="#7A7A7A"
+              style={[estilos.inputFiltro, { borderColor: colores.borde, backgroundColor: colores.campo, color: colores.textoCampo }]}
+              placeholder={t('maximo')}
+              placeholderTextColor={colores.textoSecundario}
               keyboardType="numeric"
               value={montoMaximo}
               onChangeText={setMontoMaximo}
@@ -160,43 +170,43 @@ export default function PantallaGastos() {
           </View>
 
           <View style={estilos.filaOrdenar}>
-            <Text style={estilos.etiquetaFiltro}>Ordenar por</Text>
+            <Text style={[estilos.etiquetaFiltro, { color: colores.textoSecundario }]}>{t('ordenarPor')}</Text>
             <TouchableOpacity
               style={[estilos.chip, orden === 'fecha' && estilos.chipActivo]}
               onPress={() => setOrden('fecha')}
             >
-              <Text style={estilos.textoChip}>Fecha</Text>
+              <Text style={[estilos.textoChip, { color: colores.texto }]}>{t('fecha')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[estilos.chip, orden === 'monto' && estilos.chipActivo]}
               onPress={() => setOrden('monto')}
             >
-              <Text style={estilos.textoChip}>Monto</Text>
+              <Text style={[estilos.textoChip, { color: colores.texto }]}>{t('monto')}</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={limpiarFiltros} style={estilos.botonLimpiar}>
-              <Text style={estilos.textoLimpiar}>Limpiar</Text>
+              <Text style={estilos.textoLimpiar}>{t('limpiar')}</Text>
             </TouchableOpacity>
           </View>
         </View>
       )}
 
       <Modal visible={selectorFecha !== null} transparent animationType="fade" onRequestClose={() => setSelectorFecha(null)}>
-        <View style={estilos.fondoModal}>
-          <View style={estilos.contenidoModal}>
-            <Text style={estilos.tituloModal}>Elegir fecha</Text>
+        <View style={[estilos.fondoModal, { backgroundColor: colores.fondoModal }]}> 
+          <View style={[estilos.contenidoModal, { backgroundColor: colores.modal }]}> 
+            <Text style={[estilos.tituloModal, { color: colores.texto }]}>{t('elegirFecha')}</Text>
             <DateTimePicker
               value={fechaTemporal}
               mode="date"
               display="spinner"
               onChange={cambiarFecha}
-              themeVariant="dark"
+              themeVariant={modo === 'oscuro' ? 'dark' : 'light'}
             />
             <View style={estilos.filaBotonesModal}>
               <TouchableOpacity style={estilos.botonCancelar} onPress={() => setSelectorFecha(null)}>
-                <Text style={estilos.textoCancelar}>Cancelar</Text>
+                <Text style={[estilos.textoCancelar, { color: colores.texto }]}>{t('cancelar')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={estilos.botonConfirmar} onPress={confirmarFecha}>
-                <Text style={estilos.textoConfirmar}>Elegir</Text>
+                <Text style={estilos.textoConfirmar}>{t('elegir')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -218,7 +228,7 @@ export default function PantallaGastos() {
                 />
               </View>
               <View style={estilos.infoGasto}>
-                <Text style={estilos.descripcionGasto}>
+                <Text style={[estilos.descripcionGasto, { color: colores.texto }]}> 
                   {item.descripcion || categoria?.nombre || 'Gasto'}
                 </Text>
                 <Text style={estilos.fechaGasto}>{item.fecha}</Text>

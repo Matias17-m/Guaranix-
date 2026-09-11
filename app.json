@@ -2,13 +2,11 @@
   "expo": {
     "name": "Guaranix",
     "slug": "guaranix",
+    "scheme": "guaranix",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icono.png",
+    "icon": "./assets/logo.png",
     "userInterfaceStyle": "automatic",
-    "splash": {
-      "backgroundColor": "#101010"
-    },
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -20,8 +18,14 @@
       "package": "com.matias.guaranix"
     },
     "plugins": [
-      "expo-sqlite",
-      "@react-native-community/datetimepicker"
-    ]
+      "@react-native-community/datetimepicker",
+      "expo-secure-store",
+      "expo-font"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "7ed3bc63-6557-4954-be00-e2e4c1e65779"
+      }
+    }
   }
 }
