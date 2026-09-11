@@ -42,4 +42,4 @@ src/
 - [ ] Guardado real del presupuesto por categoría
 - [ ] Comparación con mes anterior en Resumen
 - [ ] Registro de ingresos desde la UI
-- [ ] Fase 2: módulo de patrimonio neto (assets/liabilities), como el Lingot original
+- [ ] Fase 2: módulo de patrimonio neto (assets/liabilities)
