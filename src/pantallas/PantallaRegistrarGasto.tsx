@@ -3,14 +3,14 @@ import { Modal, View, Text, TextInput, TouchableOpacity, StyleSheet } from 'reac
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import DateTimePicker, { DateTimePickerEvent } from '../componentes/SelectorFecha';
 import { usarAlmacenGastos } from '@/almacen/usarAlmacenGastos';
 import { coloresTema, usarTema } from '@/almacen/usarTema';
 import { traducir } from '@/utilidades/traducciones';
-import { convertirISOaFechaLocal, obtenerFechaHoyISO, obtenerFechaISO } from '@/utilidades/formato';
+import { convertirISOaFechaLocal, obtenerFechaISO } from '@/utilidades/formato';
 
 export default function PantallaRegistrarGasto({ navigation }: any) {
-  const { categorias, cargarCategorias, agregarGasto } = usarAlmacenGastos();
+  const { categorias, fechaSeleccionada, cargarCategorias, agregarGasto } = usarAlmacenGastos();
   const modo = usarTema((estado) => estado.modo);
   const idioma = usarTema((estado) => estado.idioma);
   const colores = coloresTema[modo];
@@ -18,8 +18,8 @@ export default function PantallaRegistrarGasto({ navigation }: any) {
   const [monto, setMonto] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<number | null>(null);
-  const [fechaGasto, setFechaGasto] = useState(obtenerFechaHoyISO());
-  const [fechaTemporal, setFechaTemporal] = useState(convertirISOaFechaLocal(obtenerFechaHoyISO()));
+  const [fechaGasto, setFechaGasto] = useState(fechaSeleccionada);
+  const [fechaTemporal, setFechaTemporal] = useState(convertirISOaFechaLocal(fechaSeleccionada));
   const [selectorFechaVisible, setSelectorFechaVisible] = useState(false);
 
   useEffect(() => {
@@ -28,10 +28,9 @@ export default function PantallaRegistrarGasto({ navigation }: any) {
 
   useFocusEffect(
     useCallback(() => {
-      const hoy = obtenerFechaHoyISO();
-      setFechaGasto(hoy);
-      setFechaTemporal(convertirISOaFechaLocal(hoy));
-    }, []),
+      setFechaGasto(fechaSeleccionada);
+      setFechaTemporal(convertirISOaFechaLocal(fechaSeleccionada));
+    }, [fechaSeleccionada]),
   );
 
   async function guardarGasto() {

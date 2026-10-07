@@ -28,6 +28,11 @@ import {
 
 const COLORES_CATEGORIA = ['#E0B84B', '#5DA9E9', '#C084FC', '#5CC8A1', '#E57A6D', '#F59E7A'];
 
+function EnvoltorioTeclado({ children }: { children: React.ReactNode }) {
+  if (Platform.OS === 'web') return <>{children}</>;
+  return <TouchableWithoutFeedback onPress={Keyboard.dismiss}>{children}</TouchableWithoutFeedback>;
+}
+
 export default function PantallaPresupuesto() {
   const { categorias, gastosDelMes, fechaSeleccionada, cargarCategorias, cargarGastosDelMes, crearCategoria, borrarCategoria } = usarAlmacenGastos();
   const modo = usarTema((estado) => estado.modo);
@@ -98,7 +103,7 @@ export default function PantallaPresupuesto() {
 
   return (
     <SafeAreaView style={[estilos.contenedor, { backgroundColor: colores.fondo }]} edges={['top']}>
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <EnvoltorioTeclado>
         <KeyboardAvoidingView
           style={estilos.teclado}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -186,7 +191,7 @@ export default function PantallaPresupuesto() {
             </TouchableOpacity>
           </ScrollView>
         </KeyboardAvoidingView>
-      </TouchableWithoutFeedback>
+      </EnvoltorioTeclado>
 
       <Modal visible={modalVisible} transparent animationType="fade">
         <View style={[estilos.fondoModal, { backgroundColor: colores.fondoModal }]}> 

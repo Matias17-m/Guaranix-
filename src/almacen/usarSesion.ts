@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { Session, User } from '@supabase/supabase-js';
+import { Platform } from 'react-native';
 import { supabase } from '@/configuracion/supabase';
 import { usarAlmacenGastos } from '@/almacen/usarAlmacenGastos';
 
@@ -36,6 +37,20 @@ export const usarSesion = create<EstadoSesion>((set) => ({
   recuperandoContrasena: false,
 
   inicializar: async () => {
+    const { data: listener } = supabase.auth.onAuthStateChange((evento, sesion) => {
+  set((estado) => ({
+    sesion,
+    usuario: sesion?.user ?? null,
+    cargando: false,
+    recuperandoContrasena:
+      evento === 'SIGNED_OUT'
+        ? false
+        : evento === 'PASSWORD_RECOVERY'
+          ? true
+          : estado.recuperandoContrasena,
+  }));
+});
+
     const { data, error } = await supabase.auth.getSession();
     if (error) set({ error: obtenerMensajeError(error) });
     let sesionValida = data.session;
@@ -47,10 +62,6 @@ export const usarSesion = create<EstadoSesion>((set) => ({
       }
     }
     set({ sesion: sesionValida, usuario: sesionValida?.user ?? null, cargando: false });
-
-    const { data: listener } = supabase.auth.onAuthStateChange((evento, sesion) => {
-      set({ sesion, usuario: sesion?.user ?? null, cargando: false, recuperandoContrasena: evento === 'PASSWORD_RECOVERY' });
-    });
 
     return () => listener.subscription.unsubscribe();
   },
@@ -86,7 +97,9 @@ export const usarSesion = create<EstadoSesion>((set) => ({
   solicitarRecuperacion: async (correo) => {
     set({ cargando: true, error: null });
     const { error } = await supabase.auth.resetPasswordForEmail(correo.trim(), {
-      redirectTo: 'guaranix://reset-password',
+      redirectTo: Platform.OS === 'web'
+        ? globalThis.location.origin
+        : 'guaranix://reset-password',
     });
     if (error) {
       set({ cargando: false, error: obtenerMensajeError(error) });

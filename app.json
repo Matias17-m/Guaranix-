@@ -17,6 +17,11 @@
     "android": {
       "package": "com.matias.guaranix"
     },
+    "web": {
+  "bundler": "metro",
+  "output": "single",
+  "favicon": "./assets/logo.png"
+    },
     "plugins": [
       "@react-native-community/datetimepicker",
       "expo-secure-store",

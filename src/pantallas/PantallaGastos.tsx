@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Modal, View, Text, TextInput, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import { Alert, Modal, Platform, View, Text, TextInput, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import DateTimePicker, { DateTimePickerEvent } from '../componentes/SelectorFecha';
 import { usarAlmacenGastos } from '@/almacen/usarAlmacenGastos';
 import { convertirISOaFechaLocal, formatearGuaranies, obtenerFechaISO } from '@/utilidades/formato';
 import { coloresTema, usarTema } from '@/almacen/usarTema';
@@ -44,12 +44,19 @@ export default function PantallaGastos() {
   }
 
   function confirmarEliminacion(id: number, descripcion: string) {
+    const titulo = t('eliminarGasto');
+    const mensaje = `¿Quieres eliminar ${descripcion || t('gastos')}?`;
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      if (window.confirm(`${titulo}\n\n${mensaje}`)) void borrarGasto(id);
+      return;
+    }
+
     Alert.alert(
-      'Eliminar gasto',
-      `¿Quieres eliminar ${descripcion || t('gastos')}?`,
+      titulo,
+      mensaje,
       [
         { text: 'Cancelar', style: 'cancel' },
-        { text: 'Eliminar', style: 'destructive', onPress: () => borrarGasto(id) },
+        { text: 'Eliminar', style: 'destructive', onPress: () => { void borrarGasto(id); } },
       ],
     );
   }

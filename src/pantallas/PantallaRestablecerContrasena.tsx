@@ -29,42 +29,60 @@ export default function PantallaRestablecerContrasena() {
   return (
     <SafeAreaView style={[estilos.contenedor, { backgroundColor: colores.fondo }]}>
       <View style={[estilos.tarjeta, { backgroundColor: colores.superficie, borderColor: colores.borde }]}>
-        <View style={estilos.icono}><MaterialCommunityIcons name="lock-reset" size={30} color="#101010" /></View>
-        <Text style={[estilos.titulo, { color: colores.texto }]}>Nueva contraseña</Text>
-        <Text style={[estilos.subtitulo, { color: colores.textoSecundario }]}>Crea una contraseña nueva para tu cuenta.</Text>
+        <>
+          <View style={estilos.icono}>
+            <MaterialCommunityIcons name="lock-reset" size={30} color="#101010" />
+          </View>
 
-        <Text style={[estilos.etiqueta, { color: colores.textoSecundario }]}>Nueva contraseña</Text>
-        <View style={[estilos.fila, { backgroundColor: colores.campo, borderColor: colores.borde }]}>
+          <Text style={[estilos.titulo, { color: colores.texto }]}>Nueva contraseña</Text>
+          <Text style={[estilos.subtitulo, { color: colores.textoSecundario }]}>Crea una contraseña nueva para tu cuenta.</Text>
+
+          <Text style={[estilos.etiqueta, { color: colores.textoSecundario }]}>Nueva contraseña</Text>
+          <View style={[estilos.fila, { backgroundColor: colores.campo, borderColor: colores.borde }]}>
+            <TextInput
+              style={[estilos.input, { color: colores.textoCampo }]}
+              placeholder="Mínimo 6 caracteres"
+              placeholderTextColor={colores.textoSecundario}
+              secureTextEntry={!mostrar}
+              value={contrasena}
+              onChangeText={setContrasena}
+            />
+            <TouchableOpacity onPress={() => setMostrar((visible) => !visible)}>
+              <MaterialCommunityIcons
+                name={mostrar ? 'eye-off-outline' : 'eye-outline'}
+                size={21}
+                color={colores.textoSecundario}
+              />
+            </TouchableOpacity>
+          </View>
+
+          <Text style={[estilos.etiqueta, { color: colores.textoSecundario }]}>Repetir contraseña</Text>
           <TextInput
-            style={[estilos.input, { color: colores.textoCampo }]}
-            placeholder="Mínimo 6 caracteres"
+            style={[
+              estilos.inputSimple,
+              { backgroundColor: colores.campo, borderColor: colores.borde, color: colores.textoCampo },
+            ]}
+            placeholder="Repite tu contraseña"
             placeholderTextColor={colores.textoSecundario}
             secureTextEntry={!mostrar}
-            value={contrasena}
-            onChangeText={setContrasena}
+            value={repetida}
+            onChangeText={setRepetida}
           />
-          <TouchableOpacity onPress={() => setMostrar((visible) => !visible)}>
-            <MaterialCommunityIcons name={mostrar ? 'eye-off-outline' : 'eye-outline'} size={21} color={colores.textoSecundario} />
+
+          {(error || mensaje) && <Text style={estilos.mensaje}>{error || mensaje}</Text>}
+
+          <TouchableOpacity style={estilos.boton} onPress={guardar} disabled={cargando}>
+            {cargando ? (
+              <ActivityIndicator color="#101010" />
+            ) : (
+              <Text style={estilos.textoBoton}>Guardar contraseña</Text>
+            )}
           </TouchableOpacity>
-        </View>
 
-        <Text style={[estilos.etiqueta, { color: colores.textoSecundario }]}>Repetir contraseña</Text>
-        <TextInput
-          style={[estilos.inputSimple, { backgroundColor: colores.campo, borderColor: colores.borde, color: colores.textoCampo }]}
-          placeholder="Repite tu contraseña"
-          placeholderTextColor={colores.textoSecundario}
-          secureTextEntry={!mostrar}
-          value={repetida}
-          onChangeText={setRepetida}
-        />
-
-        {(error || mensaje) && <Text style={estilos.mensaje}>{error || mensaje}</Text>}
-        <TouchableOpacity style={estilos.boton} onPress={guardar} disabled={cargando}>
-          {cargando ? <ActivityIndicator color="#101010" /> : <Text style={estilos.textoBoton}>Guardar contraseña</Text>}
-        </TouchableOpacity>
-        <TouchableOpacity style={estilos.cancelar} onPress={cancelarRecuperacion}>
-          <Text style={[estilos.textoCancelar, { color: colores.textoSecundario }]}>Cancelar</Text>
-        </TouchableOpacity>
+          <TouchableOpacity style={estilos.cancelar} onPress={cancelarRecuperacion}>
+            <Text style={[estilos.textoCancelar, { color: colores.textoSecundario }]}>Cancelar</Text>
+          </TouchableOpacity>
+        </>
       </View>
     </SafeAreaView>
   );

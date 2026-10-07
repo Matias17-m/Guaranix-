@@ -67,92 +67,123 @@ export default function PantallaAutenticacion() {
   return (
     <SafeAreaView style={[estilos.contenedor, { backgroundColor: colores.fondo }]}>
       <View style={[estilos.tarjeta, { backgroundColor: colores.superficie, borderColor: colores.borde }]}>
-        <View style={estilos.logo}>
-          <Text style={estilos.logoTexto}>G+</Text>
-        </View>
-        <Text style={[estilos.titulo, { color: colores.texto }]}>Guaranix</Text>
-        <Text style={[estilos.subtitulo, { color: colores.textoSecundario }]}>Controla tus gastos</Text>
+        <>
+          <View style={estilos.logo}>
+            <Text style={estilos.logoTexto}>G+</Text>
+          </View>
 
-        {modoRegistro && (
-          <>
-            <Text style={[estilos.etiqueta, { color: colores.textoSecundario }]}>Nombre</Text>
-            <TextInput
-              style={[estilos.input, { backgroundColor: colores.campo, borderColor: colores.borde, color: colores.textoCampo }]}
-              placeholder="Tu nombre"
-              placeholderTextColor={colores.textoSecundario}
-              autoCapitalize="words"
-              value={nombre}
-              onChangeText={setNombre}
-            />
-          </>
-        )}
+          <Text style={[estilos.titulo, { color: colores.texto }]}>Guaranix</Text>
+          <Text style={[estilos.subtitulo, { color: colores.textoSecundario }]}>Controla tus gastos</Text>
 
-        <Text style={[estilos.etiqueta, { color: colores.textoSecundario }]}>Correo electrónico</Text>
-        <TextInput
-          style={[estilos.input, { backgroundColor: colores.campo, borderColor: colores.borde, color: colores.textoCampo }]}
-          placeholder="correo@ejemplo.com"
-          placeholderTextColor={colores.textoSecundario}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          value={correo}
-          onChangeText={setCorreo}
-        />
-
-        {!modoRecuperacion && <Text style={[estilos.etiqueta, { color: colores.textoSecundario }]}>Contraseña</Text>}
-        {!modoRecuperacion && <View style={[estilos.filaContrasena, { backgroundColor: colores.campo, borderColor: colores.borde }]}> 
-          <TextInput
-            style={[estilos.inputContrasena, { color: colores.textoCampo }]}
-            placeholder="Mínimo 6 caracteres"
-            placeholderTextColor={colores.textoSecundario}
-            secureTextEntry={!mostrarContrasena}
-            value={contrasena}
-            onChangeText={setContrasena}
-          />
-          <TouchableOpacity
-            onPress={() => setMostrarContrasena((visible) => !visible)}
-            accessibilityLabel={mostrarContrasena ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-          >
-            <MaterialCommunityIcons name={mostrarContrasena ? 'eye-off-outline' : 'eye-outline'} size={21} color={colores.textoSecundario} />
-          </TouchableOpacity>
-        </View>}
-
-        {modoRegistro && !modoRecuperacion && (
-          <>
-            <Text style={[estilos.etiqueta, { color: colores.textoSecundario }]}>Repetir contraseña</Text>
-            <View style={[estilos.filaContrasena, { backgroundColor: colores.campo, borderColor: colores.borde }]}>
+          {modoRegistro && (
+            <>
+              <Text style={[estilos.etiqueta, { color: colores.textoSecundario }]}>Nombre</Text>
               <TextInput
-                style={[estilos.inputContrasena, { color: colores.textoCampo }]}
-                placeholder="Repite tu contraseña"
+                style={[
+                  estilos.input,
+                  { backgroundColor: colores.campo, borderColor: colores.borde, color: colores.textoCampo },
+                ]}
+                placeholder="Tu nombre"
                 placeholderTextColor={colores.textoSecundario}
-                secureTextEntry={!mostrarRepetida}
-                value={repetirContrasena}
-                onChangeText={setRepetirContrasena}
+                autoCapitalize="words"
+                value={nombre}
+                onChangeText={setNombre}
               />
-              <TouchableOpacity
-                onPress={() => setMostrarRepetida((visible) => !visible)}
-                accessibilityLabel={mostrarRepetida ? 'Ocultar contraseña repetida' : 'Mostrar contraseña repetida'}
-              >
-                <MaterialCommunityIcons name={mostrarRepetida ? 'eye-off-outline' : 'eye-outline'} size={21} color={colores.textoSecundario} />
-              </TouchableOpacity>
-            </View>
-          </>
-        )}
+            </>
+          )}
 
-        {(error || mensaje) && <Text style={[estilos.mensaje, { color: error ? '#E24B4A' : '#5CC8A1' }]}>{error || mensaje}</Text>}
+          <Text style={[estilos.etiqueta, { color: colores.textoSecundario }]}>Correo electrónico</Text>
+          <TextInput
+            style={[
+              estilos.input,
+              { backgroundColor: colores.campo, borderColor: colores.borde, color: colores.textoCampo },
+            ]}
+            placeholder="correo@ejemplo.com"
+            placeholderTextColor={colores.textoSecundario}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            value={correo}
+            onChangeText={setCorreo}
+          />
 
-        <TouchableOpacity style={estilos.botonPrincipal} onPress={enviarFormulario} disabled={cargando}>
-          {cargando ? <ActivityIndicator color="#101010" /> : <Text style={estilos.textoBoton}>{modoRecuperacion ? 'Enviar correo' : modoRegistro ? 'Registrarse' : 'Iniciar sesión'}</Text>}
-        </TouchableOpacity>
+          {!modoRecuperacion && (
+            <>
+              <Text style={[estilos.etiqueta, { color: colores.textoSecundario }]}>Contraseña</Text>
+              <View style={[estilos.filaContrasena, { backgroundColor: colores.campo, borderColor: colores.borde }]}>
+                <TextInput
+                  style={[estilos.inputContrasena, { color: colores.textoCampo }]}
+                  placeholder="Mínimo 6 caracteres"
+                  placeholderTextColor={colores.textoSecundario}
+                  secureTextEntry={!mostrarContrasena}
+                  value={contrasena}
+                  onChangeText={setContrasena}
+                />
+                <TouchableOpacity
+                  onPress={() => setMostrarContrasena((visible) => !visible)}
+                  accessibilityLabel={mostrarContrasena ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                >
+                  <MaterialCommunityIcons
+                    name={mostrarContrasena ? 'eye-off-outline' : 'eye-outline'}
+                    size={21}
+                    color={colores.textoSecundario}
+                  />
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
 
-        {!modoRegistro && !modoRecuperacion && <TouchableOpacity style={estilos.botonSecundario} onPress={abrirRecuperacion}>
-          <Text style={[estilos.textoSecundario, { color: colores.textoSecundario }]}>¿Olvidaste tu contraseña?</Text>
-        </TouchableOpacity>}
+          {modoRegistro && !modoRecuperacion && (
+            <>
+              <Text style={[estilos.etiqueta, { color: colores.textoSecundario }]}>Repetir contraseña</Text>
+              <View style={[estilos.filaContrasena, { backgroundColor: colores.campo, borderColor: colores.borde }]}>
+                <TextInput
+                  style={[estilos.inputContrasena, { color: colores.textoCampo }]}
+                  placeholder="Repite tu contraseña"
+                  placeholderTextColor={colores.textoSecundario}
+                  secureTextEntry={!mostrarRepetida}
+                  value={repetirContrasena}
+                  onChangeText={setRepetirContrasena}
+                />
+                <TouchableOpacity
+                  onPress={() => setMostrarRepetida((visible) => !visible)}
+                  accessibilityLabel={mostrarRepetida ? 'Ocultar contraseña repetida' : 'Mostrar contraseña repetida'}
+                >
+                  <MaterialCommunityIcons
+                    name={mostrarRepetida ? 'eye-off-outline' : 'eye-outline'}
+                    size={21}
+                    color={colores.textoSecundario}
+                  />
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
 
-        <TouchableOpacity style={estilos.botonSecundario} onPress={cambiarModo}>
-          <Text style={[estilos.textoSecundario, { color: colores.textoSecundario }]}> 
-            {modoRecuperacion ? 'Volver a iniciar sesión' : modoRegistro ? 'Ya tengo una cuenta' : 'Crear una cuenta'}
-          </Text>
-        </TouchableOpacity>
+          {(error || mensaje) && (
+            <Text style={[estilos.mensaje, { color: error ? '#E24B4A' : '#5CC8A1' }]}>{error || mensaje}</Text>
+          )}
+
+          <TouchableOpacity style={estilos.botonPrincipal} onPress={enviarFormulario} disabled={cargando}>
+            {cargando ? (
+              <ActivityIndicator color="#101010" />
+            ) : (
+              <Text style={estilos.textoBoton}>
+                {modoRecuperacion ? 'Enviar correo' : modoRegistro ? 'Registrarse' : 'Iniciar sesión'}
+              </Text>
+            )}
+          </TouchableOpacity>
+
+          {!modoRegistro && !modoRecuperacion && (
+            <TouchableOpacity style={estilos.botonSecundario} onPress={abrirRecuperacion}>
+              <Text style={[estilos.textoSecundario, { color: colores.textoSecundario }]}>¿Olvidaste tu contraseña?</Text>
+            </TouchableOpacity>
+          )}
+
+          <TouchableOpacity style={estilos.botonSecundario} onPress={cambiarModo}>
+            <Text style={[estilos.textoSecundario, { color: colores.textoSecundario }]}>
+              {modoRecuperacion ? 'Volver a iniciar sesión' : modoRegistro ? 'Ya tengo una cuenta' : 'Crear una cuenta'}
+            </Text>
+          </TouchableOpacity>
+        </>
       </View>
     </SafeAreaView>
   );

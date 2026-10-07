@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { usarAlmacenGastos } from '@/almacen/usarAlmacenGastos';
 import { coloresTema, usarTema } from '@/almacen/usarTema';
 import { traducir } from '@/utilidades/traducciones';
-import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import DateTimePicker, { DateTimePickerEvent } from '../componentes/SelectorFecha';
 import { formatearGuaranies, obtenerFechaISO, convertirISOaFechaLocal } from '@/utilidades/formato';
 import { PieChart, BarChart } from 'react-native-gifted-charts';
 import { EstadoRemoto } from '@/componentes/EstadoRemoto';
